@@ -1,24 +1,28 @@
-# SPDX-FileCopyrightText: 2021 ladyada for Adafruit Industries
-# SPDX-License-Identifier: MIT
-
 import time
 import board
 import busio
-from adafruit_bme280 import basic as adafruit_bme280
-import adafruit_bme680
 from machine import Pin
+
+# from adafruit_bme280 import basic as adafruit_bme280
+# import adafruit_bme680
+
+I2C_0_SDA_PIN = board.GP0
+I2C_0_SCL_PIN = board.GP1
+I2C_1_SDA_PIN = board.GP2
+I2C_1_SCL_PIN = board.GP3
+# TODO add pinout...
 
 led_pin = Pin("LED", Pin.OUT)
 
-# Create sensor object, using the board's default I2C bus.
-i2c = busio.I2C(board.GP1, board.GP0)  # SCL, SDA
-bme280 = adafruit_bme280.Adafruit_BME280_I2C(i2c=i2c, address=0x77)
-bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c=i2c, address=0x76)
-bme280.sea_level_pressure = 1013.25
-bme680.sea_level_pressure = 1013.25
+# BME280 and BME680 sensors
+# i2c = busio.I2C(board.GP1, board.GP0)  # SCL, SDA
+# bme280 = adafruit_bme280.Adafruit_BME280_I2C(i2c=i2c, address=0x77)
+# bme680 = adafruit_bme680.Adafruit_BME680_I2C(i2c=i2c, address=0x76)
+# bme280.sea_level_pressure = 1013.25
+# bme680.sea_level_pressure = 1013.25
 
 while True:
     led_pin.toggle()
-    print(f"\nBME280: {round(bme280.temperature, 2)}C, {round(bme280.relative_humidity, 2)}%, {round(bme280.pressure, 2)}hPa, {round(bme280.altitude, 2)}m")
-    print(f"BME680: {round(bme680.temperature, 2)}C, {round(bme680.relative_humidity, 2)}%, {round(bme680.pressure, 2)}hPa, {round(bme680.altitude, 2)}m, {bme680.gas}ohm")
+    # print(f"\nBME280: {round(bme280.temperature, 2)}C, {round(bme280.relative_humidity, 2)}%, {round(bme280.pressure, 2)}hPa, {round(bme280.altitude, 2)}m")
+    # print(f"BME680: {round(bme680.temperature, 2)}C, {round(bme680.relative_humidity, 2)}%, {round(bme680.pressure, 2)}hPa, {round(bme680.altitude, 2)}m, {bme680.gas}ohm")
     time.sleep(2)
