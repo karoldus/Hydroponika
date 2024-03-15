@@ -37,7 +37,6 @@ while True:
     print("Odległość:", dist, "cm")
     
 def measure_distance():
-    # Wysyłamy impuls TRIG przez 10 mikrosekund
     trigger.low()
     utime.sleep_us(2)
     trigger.high()
