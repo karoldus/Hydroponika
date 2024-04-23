@@ -1,6 +1,6 @@
 from lib import hcsr04
 
-sensor = hcsr04.HCSR04(trigger_pin=16, echo_pin=0, echo_timeout_us=10000)
+sensor = hcsr04.HCSR04(trigger_pin=6, echo_pin=7, echo_timeout_us=10000)
 
 try:
     distance = sensor.distance_cm()
