@@ -3,6 +3,8 @@ import board
 import busio
 import utime
 from machine import Pin
+from WebServer import WebServer
+
 
 from adafruit_bme280 import basic as adafruit_bme280
 import adafruit_bme680
@@ -77,10 +79,46 @@ led_pin.value(1)
 wind_pin.value(1)
 pump_pin.value(1)
 
+ssid = 'iPhone(Tadeusz)'
+password = 'abc2468d'
+web_server = WebServer(ssid, password)
+
+
+web_server.run()
+
 while True:
     led_buildin_pin.toggle()
     measure_all()
+
+    temperature1 = round(bme280_0.temperature, 2)
+    temperature2 = round(bme280_1.temperature, 2)
+    temperature3 = round(bme680_0.temperature, 2)
+    temperature4 = round(bme680_1.temperature, 2)
+    humidity1 = round(bme280_0.relative_humidity, 2)
+    humidity2 = round(bme280_1.relative_humidity, 2)
+    humidity3 = round(bme680_0.relative_humidity, 2)
+    humidity4 = round(bme680_1.relative_humidity, 2)
+    water_level = hcsr04_0.distance_cm()
+    light_intensity1 = round(tsl2591_0.lux, 2)
+    light_intensity2 = round(tsl2591_1.lux, 2)
+
+    web_server.set_temperature1(temperature1)
+    web_server.set_temperature2(temperature2)
+    web_server.set_temperature3(temperature3)
+    web_server.set_temperature4(temperature4)
+
+    web_server.set_humidity1(humidity1)
+    web_server.set_humidity2(humidity1)
+    web_server.set_humidity3(humidity1)
+    web_server.set_humidity4(humidity1)
+
+    web_server.set_light_intensity1(light_intensity1)
+    web_server.set_light_intensity2(light_intensity2)
+    web_server.set_water_level(water_level)
+    
+    web_server.listen()
     time.sleep(10)
+
 
     # led_pin.toggle()
     # wind_pin.toggle()
