@@ -2,7 +2,7 @@ import time
 import board
 import busio
 import utime
-from machine import Pin
+from machine import Pin, PWM
 
 from adafruit_bme280 import basic as adafruit_bme280
 import adafruit_bme680
@@ -19,9 +19,29 @@ ECHO_PIN = 7
 
 LED_MOSFET_PIN = 8
 WIND_MOSFET_PIN = 9
-PUMP_MOSFET_PIN = 10
+PUMP_MOSFET_PIN = 8
 
-if __name__ == "__main__":
+def pin_slow_on(pwm_pin_obj, on_time_ms):
+    pwm_pin_obj.duty_u16(0)
+    for i in range(0, 65535, 65535//on_time_ms):
+        pwm_pin_obj.duty_u16(i)
+        utime.sleep_ms(1)
+    pwm_pin_obj.duty_u16(65535)
+
+def pin_slow_off(pwm_pin_obj, off_time_ms):
+    pwm_pin_obj.duty_u16(65535)
+    for i in range(65535, 0, -65535//off_time_ms):
+        pwm_pin_obj.duty_u16(i)
+        utime.sleep_ms(1)
+    pwm_pin_obj.duty_u16(0)
+    
+def toggle_pump_test(pwm_pin_ob):
+    if pwm_pin_ob.duty_u16() == 0:
+        pin_slow_on(pwm_pin_ob, 200)
+    else:
+        pin_slow_off(pwm_pin_ob, 200)
+
+def main():
 
     #HC-SR04 sensor
     hcsr04_0 = hcsr04.HCSR04(trigger_pin=TRIG_PIN, echo_pin=ECHO_PIN, echo_timeout_us=10000)
@@ -49,7 +69,8 @@ if __name__ == "__main__":
 
     led_pin = Pin(LED_MOSFET_PIN, Pin.OUT)
     wind_pin = Pin(WIND_MOSFET_PIN, Pin.OUT)
-    pump_pin = Pin(PUMP_MOSFET_PIN, Pin.OUT)
+    # pump_pin = Pin(PUMP_MOSFET_PIN, Pin.OUT)
+    pump_pwm = PWM(dest=Pin(PUMP_MOSFET_PIN), freq=1000, duty_u16=0)
 
 
     def measure_all():
@@ -77,10 +98,11 @@ if __name__ == "__main__":
 
     led_pin.value(1)
     wind_pin.value(1)
-    pump_pin.value(1)
+    # pump_pin.value(1)
 
     while True:
         led_buildin_pin.toggle()
+        toggle_pump_test(pump_pwm)
         measure_all()
         time.sleep(10)
 
@@ -94,4 +116,9 @@ if __name__ == "__main__":
         # wind_pin.toggle()
         # pump_pin.toggle()
         
-
+if __name__ == "__main__":
+    # main()
+    pump_pwm = PWM(Pin(PUMP_MOSFET_PIN), freq=1000, duty_u16=0)
+    while(1):
+        toggle_pump_test(pump_pwm)
+        time.sleep(5)
