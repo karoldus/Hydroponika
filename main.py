@@ -2,7 +2,7 @@ import time
 import board
 import busio
 import utime
-from machine import Pin
+from machine import Pin, PWM
 from WebServer import WebServer
 
 
@@ -19,115 +19,155 @@ I2C_1_SCL_PIN = board.GP3
 TRIG_PIN = 6
 ECHO_PIN = 7
 
-LED_MOSFET_PIN = 8
+LED_MOSFET_PIN = 10
 WIND_MOSFET_PIN = 9
-PUMP_MOSFET_PIN = 10
+PUMP_MOSFET_PIN = 8
 
-#HC-SR04 sensor
-hcsr04_0 = hcsr04.HCSR04(trigger_pin=TRIG_PIN, echo_pin=ECHO_PIN, echo_timeout_us=10000)
+MAX_DISTANCE_CM = 20 #TODO
 
-# I2C
-i2c_0 = busio.I2C(I2C_0_SCL_PIN, I2C_0_SDA_PIN)
-i2c_1 = busio.I2C(I2C_1_SCL_PIN, I2C_1_SDA_PIN)
+def pin_slow_on(pwm_pin_obj, on_time_ms):
+    pwm_pin_obj.duty_u16(0)
+    for i in range(0, 65535, 65535//on_time_ms):
+        pwm_pin_obj.duty_u16(i)
+        utime.sleep_ms(1)
+    pwm_pin_obj.duty_u16(65535)
 
-# BME280 and BME680 sensors
-bme280_0 = adafruit_bme280.Adafruit_BME280_I2C(i2c=i2c_0, address=0x77)
-bme280_1 = adafruit_bme280.Adafruit_BME280_I2C(i2c=i2c_1, address=0x77)
-bme280_0.sea_level_pressure = 1013.25
-bme280_1.sea_level_pressure = 1013.25
-
-bme680_0 = adafruit_bme680.Adafruit_BME680_I2C(i2c=i2c_0, address=0x76)
-bme680_1 = adafruit_bme680.Adafruit_BME680_I2C(i2c=i2c_1, address=0x76)
-bme680_0.sea_level_pressure = 1013.25
-bme680_1.sea_level_pressure = 1013.25
-
-# TSL2591 sensor
-tsl2591_0 = TSL2591(i2c_0)
-tsl2591_1 = TSL2591(i2c_1)
-
-led_buildin_pin = Pin("LED", Pin.OUT)
-
-led_pin = Pin(LED_MOSFET_PIN, Pin.OUT)
-wind_pin = Pin(WIND_MOSFET_PIN, Pin.OUT)
-pump_pin = Pin(PUMP_MOSFET_PIN, Pin.OUT)
+def pin_slow_off(pwm_pin_obj, off_time_ms):
+    pwm_pin_obj.duty_u16(65535)
+    for i in range(65535, 0, -65535//off_time_ms):
+        pwm_pin_obj.duty_u16(i)
+        utime.sleep_ms(1)
+    pwm_pin_obj.duty_u16(0)
+    
+def toggle_pump_test(pwm_pin_ob):
+    if pwm_pin_ob.duty_u16() == 0:
+        pin_slow_on(pwm_pin_ob, 200)
+    else:
+        pin_slow_off(pwm_pin_ob, 200)
 
 
-def measure_all():
-    try:
+# ssid = 'iPhone(Tadeusz)'
+# password = 'abc2468d'
+# web_server = WebServer(ssid, password)
+
+
+# web_server.run()
+
+# while True:
+#     led_buildin_pin.toggle()
+#     measure_all()
+
+#     temperature1 = round(bme280_0.temperature, 2)
+#     temperature2 = round(bme280_1.temperature, 2)
+#     temperature3 = round(bme680_0.temperature, 2)
+#     temperature4 = round(bme680_1.temperature, 2)
+#     humidity1 = round(bme280_0.relative_humidity, 2)
+#     humidity2 = round(bme280_1.relative_humidity, 2)
+#     humidity3 = round(bme680_0.relative_humidity, 2)
+#     humidity4 = round(bme680_1.relative_humidity, 2)
+#     water_level = hcsr04_0.distance_cm()
+#     light_intensity1 = round(tsl2591_0.lux, 2)
+#     light_intensity2 = round(tsl2591_1.lux, 2)
+
+#     web_server.set_temperature1(temperature1)
+#     web_server.set_temperature2(temperature2)
+#     web_server.set_temperature3(temperature3)
+#     web_server.set_temperature4(temperature4)
+
+#     web_server.set_humidity1(humidity1)
+#     web_server.set_humidity2(humidity1)
+#     web_server.set_humidity3(humidity1)
+#     web_server.set_humidity4(humidity1)
+
+#     web_server.set_light_intensity1(light_intensity1)
+#     web_server.set_light_intensity2(light_intensity2)
+#     web_server.set_water_level(water_level)
+    
+#     web_server.listen()
+#     time.sleep(10)
+
+
+def main():
+    #HC-SR04 sensor
+    hcsr04_0 = hcsr04.HCSR04(trigger_pin=TRIG_PIN, echo_pin=ECHO_PIN, echo_timeout_us=10000)
+
+    # I2C
+    i2c_0 = busio.I2C(I2C_0_SCL_PIN, I2C_0_SDA_PIN)
+    i2c_1 = busio.I2C(I2C_1_SCL_PIN, I2C_1_SDA_PIN)
+
+    # BME280 and BME680 sensors
+    bme280_0 = adafruit_bme280.Adafruit_BME280_I2C(i2c=i2c_0, address=0x77)
+    bme280_1 = adafruit_bme280.Adafruit_BME280_I2C(i2c=i2c_1, address=0x77)
+    bme280_0.sea_level_pressure = 1013.25
+    bme280_1.sea_level_pressure = 1013.25
+
+    bme680_0 = adafruit_bme680.Adafruit_BME680_I2C(i2c=i2c_0, address=0x76)
+    bme680_1 = adafruit_bme680.Adafruit_BME680_I2C(i2c=i2c_1, address=0x76)
+    bme680_0.sea_level_pressure = 1013.25
+    bme680_1.sea_level_pressure = 1013.25
+
+    # TSL2591 sensor
+    tsl2591_0 = TSL2591(i2c_0)
+    tsl2591_1 = TSL2591(i2c_1)
+
+    led_buildin_pin = Pin("LED", Pin.OUT)
+
+    led_pin = Pin(LED_MOSFET_PIN, Pin.OUT)
+    wind_pin = Pin(WIND_MOSFET_PIN, Pin.OUT)
+    # pump_pin = Pin(PUMP_MOSFET_PIN, Pin.OUT)
+    pump_pwm = PWM(dest=Pin(PUMP_MOSFET_PIN), freq=1000, duty_u16=0)
+
+    def measure_all():
+        try:
+            distance = hcsr04_0.distance_cm()
+            print('Distance:', distance, 'cm')
+        except OSError as ex:
+            print('ERROR getting distance:', ex)
+
+        print('BME280_0:', round(bme280_0.temperature, 2), '*C, ', round(bme280_0.relative_humidity, 2), "%, ", round(bme280_0.pressure, 2), 'hPa')
+        print('BME280_1:', round(bme280_1.temperature, 2), '*C, ', round(bme280_1.relative_humidity, 2), "%, ", round(bme280_1.pressure, 2), 'hPa')
+        print('BME680_0:', round(bme680_0.temperature, 2), '*C, ', round(bme680_0.relative_humidity, 2), "%, ", round(bme680_0.pressure, 2), 'hPa')
+        print('BME680_1:', round(bme680_1.temperature, 2), '*C, ', round(bme680_1.relative_humidity, 2), "%, ", round(bme680_1.pressure, 2), 'hPa')
+        print('TSL2591_0:', round(tsl2591_0.lux, 2))
+        print('TSL2591_1:', round(tsl2591_1.lux, 2))
+        print('-----------------------------------')
+
+    set_humidity = 70
+    last_humidity=round(bme280_0.relative_humidity, 2)
+    last_error = 0
+    total_error = 0
+    Kp = 1
+    Kd = 1
+    Ki = 1
+
+    while True:
+        measure_all()
+
         distance = hcsr04_0.distance_cm()
         print('Distance:', distance, 'cm')
-    except OSError as ex:
-        print('ERROR getting distance:', ex)
-    
-        # print(f"\nBME280: {round(bme280.temperature, 2)}C, {round(bme280.relative_humidity, 2)}%, {round(bme280.pressure, 2)}hPa, {round(bme280.altitude, 2)}m")
-    # print(f"BME680: {round(bme680.temperature, 2)}C, {round(bme680.relative_humidity, 2)}%, {round(bme680.pressure, 2)}hPa, {round(bme680.altitude, 2)}m, {bme680.gas}ohm")
-    # try:
-    #     print((sonar.distance,))
-    # except RuntimeError:
-    #     print("Retrying!")
-    #     pass
 
-    print('BME280_0:', round(bme280_0.temperature, 2), '*C, ', round(bme280_0.relative_humidity, 2), "%, ", round(bme280_0.pressure, 2), 'hPa')
-    print('BME280_1:', round(bme280_1.temperature, 2), '*C, ', round(bme280_1.relative_humidity, 2), "%, ", round(bme280_1.pressure, 2), 'hPa')
-    print('BME680_0:', round(bme680_0.temperature, 2), '*C, ', round(bme680_0.relative_humidity, 2), "%, ", round(bme680_0.pressure, 2), 'hPa')
-    print('BME680_1:', round(bme680_1.temperature, 2), '*C, ', round(bme680_1.relative_humidity, 2), "%, ", round(bme680_1.pressure, 2), 'hPa')
-    print('TSL2591_0:', round(tsl2591_0.lux, 2))
-    print('TSL2591_1:', round(tsl2591_1.lux, 2))
-    print('-----------------------------------')
+        if distance > MAX_DISTANCE_CM:
+            time.sleep(300)
+            continue
 
-led_pin.value(1)
-wind_pin.value(1)
-pump_pin.value(1)
+        humidity = round(bme280_0.relative_humidity, 2) #TODO uśrednianie, który czujnik?
 
-ssid = 'iPhone(Tadeusz)'
-password = 'abc2468d'
-web_server = WebServer(ssid, password)
+        # PID
+        error = humidity - set_humidity
+        proporional = error * Kp
+        derivative = (error - last_error) * Kd
+        integral = (error + last_error) * Ki
+        u = proporional + derivative + integral
+
+        last_humidity = humidity
+        last_error = error
+        
+        pin_slow_on(pump_pwm, 100)
+        pin_slow_off(pump_pwm, 100)
 
 
-web_server.run()
 
-while True:
-    led_buildin_pin.toggle()
-    measure_all()
+        
 
-    temperature1 = round(bme280_0.temperature, 2)
-    temperature2 = round(bme280_1.temperature, 2)
-    temperature3 = round(bme680_0.temperature, 2)
-    temperature4 = round(bme680_1.temperature, 2)
-    humidity1 = round(bme280_0.relative_humidity, 2)
-    humidity2 = round(bme280_1.relative_humidity, 2)
-    humidity3 = round(bme680_0.relative_humidity, 2)
-    humidity4 = round(bme680_1.relative_humidity, 2)
-    water_level = hcsr04_0.distance_cm()
-    light_intensity1 = round(tsl2591_0.lux, 2)
-    light_intensity2 = round(tsl2591_1.lux, 2)
-
-    web_server.set_temperature1(temperature1)
-    web_server.set_temperature2(temperature2)
-    web_server.set_temperature3(temperature3)
-    web_server.set_temperature4(temperature4)
-
-    web_server.set_humidity1(humidity1)
-    web_server.set_humidity2(humidity1)
-    web_server.set_humidity3(humidity1)
-    web_server.set_humidity4(humidity1)
-
-    web_server.set_light_intensity1(light_intensity1)
-    web_server.set_light_intensity2(light_intensity2)
-    web_server.set_water_level(water_level)
-    
-    web_server.listen()
-    time.sleep(10)
-
-
-    # led_pin.toggle()
-    # wind_pin.toggle()
-    # pump_pin.toggle()
-
-    # time.sleep(5)
-
-    # led_pin.toggle()
-    # wind_pin.toggle()
-    # pump_pin.toggle()
-    
-
+if __name__ == '__main__':
+    main()
