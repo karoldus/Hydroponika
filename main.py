@@ -19,7 +19,7 @@ ECHO_PIN = 7
 
 LED_MOSFET_PIN = 8
 WIND_MOSFET_PIN = 9
-PUMP_MOSFET_PIN = 8
+PUMP_MOSFET_PIN = 10
 
 def pin_slow_on(pwm_pin_obj, on_time_ms):
     pwm_pin_obj.duty_u16(0)
@@ -70,7 +70,7 @@ def main():
     led_pin = Pin(LED_MOSFET_PIN, Pin.OUT)
     wind_pin = Pin(WIND_MOSFET_PIN, Pin.OUT)
     # pump_pin = Pin(PUMP_MOSFET_PIN, Pin.OUT)
-    pump_pwm = PWM(dest=Pin(PUMP_MOSFET_PIN), freq=1000, duty_u16=0)
+    pump_pwm = PWM(Pin(PUMP_MOSFET_PIN), freq=1000, duty_u16=0)
 
 
     def measure_all():
@@ -96,13 +96,15 @@ def main():
         print('TSL2591_1:', round(tsl2591_1.lux, 2))
         print('-----------------------------------')
 
-    led_pin.value(1)
+    led_pin.value(0)
     wind_pin.value(1)
     # pump_pin.value(1)
 
     while True:
         led_buildin_pin.toggle()
         toggle_pump_test(pump_pwm)
+        led_pin.toggle()
+        wind_pin.toggle()
         measure_all()
         time.sleep(10)
 
@@ -117,8 +119,8 @@ def main():
         # pump_pin.toggle()
         
 if __name__ == "__main__":
-    # main()
-    pump_pwm = PWM(Pin(PUMP_MOSFET_PIN), freq=1000, duty_u16=0)
-    while(1):
-        toggle_pump_test(pump_pwm)
-        time.sleep(5)
+    main()
+    # pump_pwm = PWM(Pin(PUMP_MOSFET_PIN), freq=1000, duty_u16=0)
+    # while(1):
+        # toggle_pump_test(pump_pwm)
+        # time.sleep(5)
