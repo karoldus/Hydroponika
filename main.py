@@ -108,14 +108,14 @@ def main():
 
     # TSL2591 sensor
     tsl2591_0 = TSL2591(i2c_0)
-    tsl2591_1 = TSL2591(i2c_1)
+    # tsl2591_1 = TSL2591(i2c_1)
 
     led_buildin_pin = Pin("LED", Pin.OUT)
 
     led_pin = Pin(LED_MOSFET_PIN, Pin.OUT)
     wind_pin = Pin(WIND_MOSFET_PIN, Pin.OUT)
     # pump_pin = Pin(PUMP_MOSFET_PIN, Pin.OUT) 
-    pump_pwm = PWM(Pin(PUMP_MOSFET_PIN), freq=1000, duty_u16=0) # TODO freq może można zwiększyć?
+    pump_pwm = PWM(Pin(PUMP_MOSFET_PIN), freq=10000, duty_u16=0) # TODO freq może można zwiększyć?
     led_pin.value(0)
     wind_pin.value(0)
     def measure_all():
@@ -133,15 +133,20 @@ def main():
        # print('TSL2591_1:', round(tsl2591_1.lux, 2))
         print('-----------------------------------')
 
-    set_humidity = 75
+    set_humidity = 69
+    min_humidity = 65
     last_error = 0
     total_error = 0
     Kp = 5000
     Kd = 100
     Ki = 3000
 
+    humidity_was_set = False
+
     while True:
         measure_all()
+
+        led_buildin_pin.toggle()
 
         distance = hcsr04_0.distance_cm()
         print('Distance:', distance, 'cm')
@@ -157,28 +162,40 @@ def main():
          #humidity = (int(bme680_0.relative_humidity) + int(bme680_1.relative_humidity)) / 2 
 
         humidity = int(bme680_0.relative_humidity)
-        # PID
-        error = set_humidity - humidity
-        proporional = error * Kp
-        derivative = (error - last_error) * Kd
-        integral = (error + last_error) * Ki
-        u = proporional + derivative + integral
-        if integral > 65535:
-            integral = 65535
-            u = 65535
-           
-        if integral < 0:
-            integral = 0
-            u = 0
-        if error < 2:
-            u = 0
-        # wystawianie pwm dla wyjścia pompy
-        pump_pwm.duty_u16(int(u))
-        print(u)
-        print(integral)
-        print(humidity)
-        
-        last_error = error
+
+        if humidity_was_set == True and humidity < min_humidity:
+            humidity_was_set = False
+
+        if humidity_was_set == False:
+            # PID
+            error = set_humidity - humidity
+            proporional = error * Kp
+            derivative = (error - last_error) * Kd
+            integral = (error + last_error) * Ki
+            u = proporional + derivative + integral
+            if integral > 65535:
+                integral = 65535
+                u = 65535
+            
+            if integral < 0:
+                integral = 0
+                # u = 0
+            if error < 2:
+                u = 0
+            
+            if u < 0:
+                u = 0
+
+            if u == 0:
+                humidity_was_set = True
+
+            # wystawianie pwm dla wyjścia pompy
+            pump_pwm.duty_u16(int(u))
+            print(u)
+            print(integral)
+            print(humidity)
+            
+            last_error = error
         
         
 
